@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SRAS-SYSTEM — Smart Rehabilitation Assessment System</title>
+<meta name="description" content="SRAS-System is a biomedical project in development, supporting physiotherapists through smart muscle monitoring, movement assessment and real-time data visualization.">
+<meta name="theme-color" content="#061426">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { navy:'#061426', midnight:'#0A1F35', cyan:'#00D9FF', teal:'#16C7C1', ice:'#F4FAFF', mist:'#8FA8BC' },
+  fontFamily: { display:['Space Grotesk','sans-serif'], body:['Inter','sans-serif'] }
+}}};
+</script>
+<style>
+:root{--ease:cubic-bezier(.22,1,.36,1)}
+html,body{overflow-x:hidden}
+body{background:#061426;color:#F4FAFF;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+::selection{background:#00D9FF;color:#061426}
+a:focus-visible,button:focus-visible{outline:2px solid #00D9FF;outline-offset:4px;border-radius:6px}
+
+/* Background layers */
+.bg-fixed-layer{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;
+  background:linear-gradient(180deg,#061426 0%,#0A1F35 55%,#061426 100%)}
+.grid-bg{position:absolute;inset:-60px;background-image:linear-gradient(rgba(0,217,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(0,217,255,.055) 1px,transparent 1px);background-size:60px 60px;
+  -webkit-mask-image:radial-gradient(ellipse at 60% 30%,#000 10%,transparent 72%);mask-image:radial-gradient(ellipse at 60% 30%,#000 10%,transparent 72%);animation:gridMove 28s linear infinite}
+@keyframes gridMove{to{transform:translate(60px,60px)}}
+.glow{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5}
+.glow.a{width:46vw;height:46vw;left:-12vw;top:-10vw;background:radial-gradient(circle,rgba(0,217,255,.22),transparent 65%);animation:drift 22s ease-in-out infinite alternate}
+.glow.b{width:40vw;height:40vw;right:-10vw;top:35vh;background:radial-gradient(circle,rgba(22,199,193,.18),transparent 65%);animation:drift 26s ease-in-out infinite alternate-reverse}
+@keyframes drift{to{transform:translate(6vw,8vh)}}
+.noise{position:absolute;inset:0;opacity:.05;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E")}
+.particle{position:absolute;width:3px;height:3px;background:#00D9FF;opacity:0;border-radius:1px;animation:rise linear infinite}
+@keyframes rise{0%{transform:translateY(0) rotate(0);opacity:0}15%{opacity:.5}85%{opacity:.25}100%{transform:translateY(-110vh) rotate(180deg);opacity:0}}
+
+/* Glass */
+.glass{background:linear-gradient(145deg,rgba(244,250,255,.06),rgba(244,250,255,.015));border:1px solid rgba(0,217,255,.16);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:inset 0 1px 0 rgba(244,250,255,.07),0 20px 50px -25px rgba(0,0,0,.6)}
+.card{position:relative;transition:transform .6s var(--ease),border-color .4s,box-shadow .6s}
+.card::before{content:"";position:absolute;left:0;top:0;height:1px;width:0;background:linear-gradient(90deg,#00D9FF,transparent);transition:width .7s var(--ease)}
+.card:hover{transform:translateY(-6px);border-color:rgba(0,217,255,.45);box-shadow:0 30px 60px -30px rgba(0,217,255,.25),inset 0 1px 0 rgba(244,250,255,.1)}
+.card:hover::before{width:100%}
+.card:hover .ico{color:#00D9FF;box-shadow:0 0 30px rgba(0,217,255,.3)}
+.ico{transition:all .4s}
+
+.grad-text{background:linear-gradient(100deg,#00D9FF 10%,#16C7C1 90%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.label{font-family:'Space Grotesk';text-transform:uppercase;letter-spacing:.28em;font-size:.72rem;color:#8FA8BC}
+
+/* Reveal */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity 1s var(--ease),transform 1s var(--ease);transition-delay:var(--d,0s)}
+.reveal.in{opacity:1;transform:none}
+.line-mask{display:block;overflow:hidden}
+.line-mask>span{display:block;transform:translateY(110%);transition:transform 1.2s var(--ease);transition-delay:var(--d,0s)}
+body.ready .line-mask>span{transform:none}
+
+/* Loader */
+#loader{position:fixed;inset:0;z-index:100;background:#061426;display:flex;align-items:center;justify-content:center;transition:opacity .8s var(--ease),visibility .8s;pointer-events:none}
+#loader.done{opacity:0;visibility:hidden}
+#loader .bar{width:120px;height:1px;background:rgba(0,217,255,.2);overflow:hidden;margin-top:18px}
+#loader .bar i{display:block;height:100%;width:100%;background:#00D9FF;transform:translateX(-100%);animation:load 1s var(--ease) forwards}
+@keyframes load{to{transform:none}}
+
+/* Pulse dot */
+.pulse{position:relative;width:8px;height:8px;border-radius:50%;background:#00D9FF}
+.pulse::after{content:"";position:absolute;inset:0;border-radius:50%;background:#00D9FF;animation:ping 2.2s ease-out infinite}
+@keyframes ping{to{transform:scale(3.4);opacity:0}}
+
+/* Hero visual */
+.hud{position:relative;width:min(100%,520px);aspect-ratio:1/1.12;margin-inline:auto}
+.hud svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.ring{transform-origin:260px 290px;animation:spin 60s linear infinite}
+.ring.r2{animation-duration:90s;animation-direction:reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+.trace{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 3s var(--ease) .6s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.node{animation:glowNode 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes glowNode{50%{opacity:.35;transform:scale(1.6)}}
+.scan{position:absolute;left:12%;right:12%;height:2px;top:8%;background:linear-gradient(90deg,transparent,#00D9FF,transparent);box-shadow:0 0 18px 2px rgba(0,217,255,.5);animation:scan 6s ease-in-out infinite}
+@keyframes scan{0%,100%{top:8%;opacity:0}10%,90%{opacity:1}50%{top:92%}}
+.float{animation:float 7s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-10px)}}
+.panel{position:absolute;padding:.6rem .85rem;border-radius:.75rem;font-family:'Space Grotesk';font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:#8FA8BC;display:flex;gap:.55rem;align-items:center}
+.panel i{color:#00D9FF}
+.mouse-layer{transition:transform .5s var(--ease)}
+
+/* Pipeline */
+.flow-line{stroke-dasharray:6 8;animation:dash 1.6s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-28}}
+.step .ico{transition:all .4s}
+.step:hover .ico{color:#00D9FF;border-color:rgba(0,217,255,.6)}
+
+/* Cursor */
+#cursor,#cursor-dot{position:fixed;left:0;top:0;pointer-events:none;z-index:90;display:none}
+@media (hover:hover) and (pointer:fine){
+  #cursor,#cursor-dot{display:block}
+  #cursor{width:34px;height:34px;margin:-17px 0 0 -17px;border:1px solid rgba(0,217,255,.55);border-radius:50%;transition:width .3s,height .3s,margin .3s,background .3s}
+  #cursor.big{width:60px;height:60px;margin:-30px 0 0 -30px;background:rgba(0,217,255,.08)}
+  #cursor-dot{width:5px;height:5px;margin:-2.5px 0 0 -2.5px;background:#00D9FF;border-radius:50%}
+}
+
+.btn{position:relative;display:inline-flex;align-items:center;gap:.8rem;padding:1rem 1.8rem;border-radius:999px;font-family:'Space Grotesk';font-weight:500;letter-spacing:.18em;font-size:.78rem;text-transform:uppercase;color:#061426;background:linear-gradient(100deg,#00D9FF,#16C7C1);box-shadow:0 10px 40px -10px rgba(0,217,255,.55);transition:box-shadow .4s,transform .3s var(--ease)}
+.btn:hover{box-shadow:0 16px 50px -8px rgba(0,217,255,.75)}
+.btn i{transition:transform .4s var(--ease)}
+.btn:hover i{transform:translateY(3px)}
+.btn.ghost{background:transparent;color:#F4FAFF;border:1px solid rgba(0,217,255,.45);box-shadow:none}
+.btn.ghost:hover{background:rgba(0,217,255,.1);box-shadow:0 0 40px -10px rgba(0,217,255,.5)}
+.btn.ghost i{transform:none}
+.btn.ghost:hover i{transform:translateX(4px)}
+.nav-link{position:relative;transition:color .3s}
+.nav-link::after{content:"";position:absolute;left:0;bottom:-6px;height:1px;width:100%;background:#00D9FF;transform:scaleX(0);transform-origin:left;transition:transform .4s var(--ease)}
+.nav-link:hover{color:#F4FAFF}.nav-link:hover::after{transform:scaleX(1)}
+.social{width:40px;height:40px;display:grid;place-items:center;border-radius:50%;border:1px solid rgba(143,168,188,.3);color:#8FA8BC;transition:all .35s var(--ease)}
+.social:hover{color:#00D9FF;border-color:#00D9FF;transform:translateY(-3px);box-shadow:0 8px 24px -8px rgba(0,217,255,.5)}
+#toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,30px);opacity:0;z-index:95;transition:all .5s var(--ease);max-width:90vw;pointer-events:none}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:640px){.panel{font-size:.58rem;padding:.45rem .65rem}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+  .reveal{opacity:1;transform:none}.line-mask>span{transform:none}.trace{stroke-dashoffset:0}.particle,.scan{display:none}
+}
+</style>
+</head>
+<body>
+
+<div id="loader" aria-hidden="true">
+  <div class="text-center">
+    <div class="font-display font-semibold tracking-[.35em] text-sm">SRAS<span class="text-cyan">-</span>SYSTEM</div>
+    <div class="bar mx-auto"><i></i></div>
+  </div>
+</div>
+<div id="cursor" aria-hidden="true"></div><div id="cursor-dot" aria-hidden="true"></div>
+<div id="toast" class="glass rounded-xl px-5 py-3 text-sm text-ice" role="status" aria-live="polite"></div>
+
+<div class="bg-fixed-layer" aria-hidden="true">
+  <div class="grid-bg"></div><div class="glow a"></div><div class="glow b"></div><div class="noise"></div>
+  <div id="particles"></div>
+</div>
+
+<!-- NAV -->
+<header class="fixed top-0 inset-x-0 z-50">
+  <nav class="max-w-7xl mx-auto flex items-center justify-between px-5 sm:px-8 py-5" aria-label="Main navigation">
+    <a href="#top" class="font-display font-semibold tracking-[.3em] text-sm sm:text-base">SRAS<span class="text-cyan">-</span>SYSTEM</a>
+    <div class="hidden md:flex items-center gap-9 label !tracking-[.22em]">
+      <a class="nav-link" href="#vision">Vision</a>
+      <a class="nav-link" href="#technology">Technology</a>
+      <a class="nav-link" href="#journey">Journey</a>
+    </div>
+    <button id="menuBtn" class="md:hidden w-11 h-11 grid place-items-center rounded-full glass" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu"><i class="fa-solid fa-bars"></i></button>
+  </nav>
+  <div id="mobileMenu" class="hidden md:hidden mx-5 glass rounded-2xl p-6 flex-col gap-5 label !tracking-[.22em]">
+    <a class="block py-2" href="#vision">Vision</a>
+    <a class="block py-2" href="#technology">Technology</a>
+    <a class="block py-2" href="#journey">Journey</a>
+  </div>
+</header>
+
+<main id="top">
+<!-- HERO -->
+<section class="relative min-h-screen flex items-center pt-28 pb-16 px-5 sm:px-8" id="hero">
+  <div class="max-w-7xl mx-auto w-full grid lg:grid-cols-[1.05fr_.95fr] gap-14 items-center">
+    <div>
+      <p class="label text-cyan !text-cyan reveal in" style="--d:.2s">THE FUTURE OF REHABILITATION</p>
+      <h1 class="font-display font-bold leading-[.98] tracking-tight mt-6 text-[2.45rem] sm:text-6xl xl:text-7xl">
+        <span class="line-mask"><span style="--d:.15s">REDEFINING</span></span>
+        <span class="line-mask"><span style="--d:.28s">THE FUTURE OF</span></span>
+        <span class="line-mask"><span style="--d:.41s"><span class="grad-text">PHYSIOTHERAPY.</span></span></span>
+      </h1>
+      <p class="mt-8 text-xl sm:text-2xl font-light text-ice/90 max-w-xl leading-snug reveal" style="--d:.8s">Where biomedical engineering meets intelligent rehabilitation assessment.</p>
+      <p class="mt-5 text-mist max-w-lg leading-relaxed reveal" style="--d:.95s">SRAS-System is an innovative biomedical project designed to support physiotherapists through smart muscle monitoring, movement assessment, and real-time data visualization.</p>
+      <div class="mt-10 flex flex-wrap items-center gap-x-8 gap-y-6 reveal" style="--d:1.1s">
+        <a href="#vision" class="btn magnetic">Discover our vision <i class="fa-solid fa-arrow-down"></i></a>
+        <div class="flex items-center gap-3 label !text-ice/80"><span class="pulse"></span>DEVELOPMENT IN PROGRESS</div>
+      </div>
+    </div>
+
+    <!-- Visual -->
+    <div class="hud reveal" style="--d:.5s" id="hud" aria-label="Illustrative anatomical visualization with sensor nodes">
+      <div class="mouse-layer absolute inset-0" data-depth="14">
+        <svg viewBox="0 0 520 582" role="img" aria-hidden="true">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#00D9FF"/><stop offset="1" stop-color="#16C7C1"/></linearGradient>
+            <radialGradient id="aura"><stop offset="0" stop-color="#00D9FF" stop-opacity=".18"/><stop offset="1" stop-color="#00D9FF" stop-opacity="0"/></radialGradient>
+          </defs>
+          <circle cx="260" cy="290" r="250" fill="url(#aura)"/>
+          <g class="ring" fill="none" stroke="#00D9FF" stroke-opacity=".28"><circle cx="260" cy="290" r="235" stroke-dasharray="2 10"/><circle cx="260" cy="290" r="205" stroke-opacity=".15"/></g>
+          <g class="ring r2" fill="none" stroke="#16C7C1" stroke-opacity=".35"><circle cx="260" cy="290" r="175" stroke-dasharray="40 14 6 14"/></g>
+          <!-- Figure -->
+          <g fill="none" stroke="url(#g)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <circle class="trace" pathLength="1" cx="260" cy="118" r="30"/>
+            <path class="trace" pathLength="1" d="M248 146v22M272 146v22"/>
+            <path class="trace" pathLength="1" d="M200 182c20-14 40-16 60-16s40 2 60 16c8 40 6 80 0 118-10 20-10 40-2 56H202c8-16 8-36-2-56-6-38-8-78 0-118z"/>
+            <path class="trace" pathLength="1" d="M200 182c-24 16-36 46-44 84l-14 80M320 182c24 16 36 46 44 84l14 80"/>
+            <path class="trace" pathLength="1" d="M202 356c-8 40-14 80-12 120l-4 66M318 356c8 40 14 80 12 120l4 66"/>
+            <path class="trace" pathLength="1" d="M260 168v188M232 205h56M228 240h64M232 275h56M238 310h44" stroke-opacity=".6"/>
+            <path class="trace" pathLength="1" d="M222 356c10 20 28 20 38 0 10 20 28 20 38 0" stroke-opacity=".6"/>
+          </g>
+          <!-- Sensor nodes + leader lines -->
+          <g fill="#00D9FF">
+            <circle class="node" cx="214" cy="206" r="4"/><circle class="node" cx="306" cy="206" r="4" style="animation-delay:.6s"/>
+            <circle class="node" cx="160" cy="300" r="4" style="animation-delay:1.2s"/><circle class="node" cx="360" cy="300" r="4" style="animation-delay:1.8s"/>
+            <circle class="node" cx="206" cy="420" r="4" style="animation-delay:2.4s"/><circle class="node" cx="314" cy="420" r="4" style="animation-delay:.9s"/>
+            <circle class="node" cx="260" cy="262" r="4" style="animation-delay:1.5s"/>
+          </g>
+          <g stroke="#00D9FF" stroke-opacity=".4" stroke-width="1" fill="none">
+            <path class="trace" pathLength="1" d="M306 206l60-40h50"/><path class="trace" pathLength="1" d="M160 300l-70 30H40"/><path class="trace" pathLength="1" d="M314 420l50 34h60"/>
+          </g>
+        </svg>
+        <div class="scan"></div>
+      </div>
+      <div class="panel glass float" style="left:-2%;top:6%"><i class="fa-solid fa-wave-square"></i>Muscle signal</div>
+      <div class="panel glass float" style="right:-2%;top:30%;animation-delay:-2s"><i class="fa-solid fa-person-walking"></i>Movement</div>
+      <div class="panel glass float" style="left:2%;bottom:8%;animation-delay:-4s"><i class="fa-solid fa-chart-line"></i>Live visualization</div>
+    </div>
+  </div>
+  <p class="absolute bottom-5 right-6 text-[.62rem] text-mist/60 tracking-widest hidden sm:block">ILLUSTRATIVE CONCEPT — NOT MEASURED DATA</p>
+</section>
+
+<!-- VISION -->
+<section id="vision" class="relative py-24 sm:py-32 px-5 sm:px-8">
+  <div class="max-w-7xl mx-auto">
+    <div class="max-w-3xl">
+      <p class="label !text-cyan reveal">OUR VISION</p>
+      <h2 class="font-display font-bold text-3xl sm:text-5xl leading-tight mt-5 reveal" style="--d:.1s">A NEW PERSPECTIVE ON <span class="grad-text">REHABILITATION</span></h2>
+      <p class="mt-6 text-lg text-mist max-w-xl reveal" style="--d:.2s">We believe that understanding movement is an essential step toward improving rehabilitation assessment.</p>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6 mt-16">
+      <article class="card glass rounded-3xl p-8 reveal" style="--d:.1s" tabindex="0">
+        <div class="flex items-start justify-between"><div class="ico w-14 h-14 rounded-2xl grid place-items-center text-xl text-teal border border-cyan/20 bg-cyan/5"><i class="fa-solid fa-heart-pulse"></i></div><span class="font-display text-mist/60 text-sm tracking-widest">01</span></div>
+        <h3 class="font-display font-semibold tracking-[.14em] text-lg mt-8">SMART MONITORING</h3>
+        <p class="text-mist mt-3 leading-relaxed">A technology-driven approach to monitoring muscle activity and collecting relevant biomedical signals.</p>
+      </article>
+      <article class="card glass rounded-3xl p-8 reveal" style="--d:.2s" tabindex="0">
+        <div class="flex items-start justify-between"><div class="ico w-14 h-14 rounded-2xl grid place-items-center text-xl text-teal border border-cyan/20 bg-cyan/5"><i class="fa-solid fa-child-reaching"></i></div><span class="font-display text-mist/60 text-sm tracking-widest">02</span></div>
+        <h3 class="font-display font-semibold tracking-[.14em] text-lg mt-8">MOVEMENT ASSESSMENT</h3>
+        <p class="text-mist mt-3 leading-relaxed">A new perspective on understanding movement patterns and supporting physiotherapy assessment.</p>
+      </article>
+      <article class="card glass rounded-3xl p-8 reveal" style="--d:.3s" tabindex="0">
+        <div class="flex items-start justify-between"><div class="ico w-14 h-14 rounded-2xl grid place-items-center text-xl text-teal border border-cyan/20 bg-cyan/5"><i class="fa-solid fa-chart-column"></i></div><span class="font-display text-mist/60 text-sm tracking-widest">03</span></div>
+        <h3 class="font-display font-semibold tracking-[.14em] text-lg mt-8">REAL-TIME INSIGHTS</h3>
+        <p class="text-mist mt-3 leading-relaxed">Visualizing collected data through an intuitive digital interface to support professional evaluation.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- TECHNOLOGY -->
+<section id="technology" class="relative py-24 sm:py-32 px-5 sm:px-8">
+  <div class="max-w-7xl mx-auto">
+    <p class="label !text-cyan reveal">ENGINEERING MEETS INNOVATION</p>
+    <h2 class="font-display font-bold text-3xl sm:text-5xl leading-tight mt-5 max-w-3xl reveal" style="--d:.1s">ENGINEERED TO UNDERSTAND <span class="grad-text">MOVEMENT.</span></h2>
+    <p class="mt-6 text-mist max-w-2xl leading-relaxed reveal" style="--d:.2s">The project combines biomedical engineering, embedded systems, and digital software to support physiotherapy professionals. It is a research and development effort — not a certified medical device, and not designed to diagnose conditions on its own.</p>
+
+    <div class="relative mt-16">
+      <svg class="hidden lg:block absolute left-0 top-[34px] w-full h-4 overflow-visible" preserveAspectRatio="none" aria-hidden="true"><line class="flow-line" x1="12%" y1="8" x2="88%" y2="8" stroke="#00D9FF" stroke-opacity=".5"/></svg>
+      <ol class="relative grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-4">
+        <li class="step reveal text-center lg:px-4" style="--d:.1s"><div class="ico mx-auto w-[68px] h-[68px] rounded-full grid place-items-center text-2xl text-teal glass bg-navy"><i class="fa-solid fa-microchip fa-flip-horizontal" style="display:none"></i><i class="fa-solid fa-hand-holding-medical"></i></div><h3 class="font-display font-semibold tracking-[.14em] mt-6">BIOMEDICAL SENSORS</h3><p class="text-mist text-sm mt-2">Capture signals related to muscle activity and movement.</p></li>
+        <li class="step reveal text-center lg:px-4" style="--d:.2s"><div class="ico mx-auto w-[68px] h-[68px] rounded-full grid place-items-center text-2xl text-teal glass bg-navy"><i class="fa-solid fa-microchip"></i></div><h3 class="font-display font-semibold tracking-[.14em] mt-6">SMART HARDWARE</h3><p class="text-mist text-sm mt-2">Embedded electronics that acquire and transmit the data.</p></li>
+        <li class="step reveal text-center lg:px-4" style="--d:.3s"><div class="ico mx-auto w-[68px] h-[68px] rounded-full grid place-items-center text-2xl text-teal glass bg-navy"><i class="fa-solid fa-gears"></i></div><h3 class="font-display font-semibold tracking-[.14em] mt-6">DATA PROCESSING</h3><p class="text-mist text-sm mt-2">Software that filters and organizes raw signals.</p></li>
+        <li class="step reveal text-center lg:px-4" style="--d:.4s"><div class="ico mx-auto w-[68px] h-[68px] rounded-full grid place-items-center text-2xl text-teal glass bg-navy"><i class="fa-solid fa-display"></i></div><h3 class="font-display font-semibold tracking-[.14em] mt-6">DIGITAL VISUALIZATION</h3><p class="text-mist text-sm mt-2">Clear interfaces that help professionals evaluate results.</p></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- JOURNEY -->
+<section id="journey" class="relative py-28 sm:py-40 px-5 sm:px-8 text-center">
+  <div class="max-w-4xl mx-auto">
+    <p class="label !text-cyan reveal">THE JOURNEY STARTS HERE</p>
+    <h2 class="font-display font-bold text-3xl sm:text-5xl mt-5 reveal" style="--d:.1s">SOMETHING NEW IS TAKING SHAPE.</h2>
+    <p class="mt-6 text-mist text-lg max-w-2xl mx-auto reveal" style="--d:.2s">We are building a new approach to rehabilitation assessment — combining engineering, technology, and a deeper understanding of human movement.</p>
+    <p class="font-display font-bold leading-[1.02] tracking-tight mt-14 text-4xl sm:text-6xl lg:text-7xl reveal" style="--d:.3s"><span class="text-ice/25">THE NEXT STEP STARTS WITH</span> <span class="grad-text">INNOVATION.</span></p>
+    <div class="mt-14 reveal" style="--d:.4s">
+      <a id="followBtn" href="#journey" class="btn magnetic" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-facebook-f"></i> Follow our journey</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- FOOTER -->
+<footer class="px-5 sm:px-8 pb-10 pt-4">
+  <div class="max-w-7xl mx-auto">
+    <div class="h-px bg-gradient-to-r from-transparent via-cyan/40 to-transparent"></div>
+    <div class="grid md:grid-cols-[1.4fr_1fr] gap-10 py-12 items-start">
+      <div>
+        <div class="font-display font-semibold tracking-[.3em]">SRAS<span class="text-cyan">-</span>SYSTEM</div>
+        <p class="text-mist text-sm mt-4 max-w-md leading-relaxed">Smart Rehabilitation Assessment System — a biomedical engineering project exploring smarter ways to understand movement.</p>
+      </div>
+      <div class="flex md:justify-end gap-3" aria-label="Social media">
+        <a class="social" href="#" data-social="Facebook" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+        <a class="social" href="#" data-social="LinkedIn" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+        <a class="social" href="#" data-social="Instagram" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+        <a class="social" href="#" data-social="YouTube" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+      </div>
+    </div>
+    <div class="h-px bg-mist/15"></div>
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 pt-7 text-xs text-mist">
+      <span>© <span id="year">2026</span> SRAS-System. All rights reserved.</span>
+      <span class="font-display tracking-[.14em] flex items-center gap-3"><span class="h-px w-8 bg-cyan/60"></span>Developed by <span class="text-cyan">Mohamed Rashad</span></span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ===== CONFIG: paste real URLs here. Leave "" until they exist. ===== */
+const LINKS = { Facebook: "", LinkedIn: "", Instagram: "", YouTube: "" };
+
+(function () {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = (s, c = document) => c.querySelector(s), $$ = (s, c = document) => [...c.querySelectorAll(s)];
+
+  /* Intro: never blocks the page */
+  const ready = () => { $('#loader').classList.add('done'); document.body.classList.add('ready'); };
+  addEventListener('load', () => setTimeout(ready, reduce ? 0 : 900));
+  setTimeout(ready, 2500);
+
+  $('#year').textContent = new Date().getFullYear();
+
+  /* Toast */
+  let tt; const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 3200); };
+
+  /* Links: real URL if configured, otherwise a clear notice */
+  const wire = (el, key) => {
+    const url = LINKS[key];
+    if (url) { el.href = url; el.target = '_blank'; el.rel = 'noopener noreferrer'; }
+    else el.addEventListener('click', e => { e.preventDefault(); toast(key + ' page coming soon — add its URL in the LINKS config.'); });
+  };
+  wire($('#followBtn'), 'Facebook');
+  $$('[data-social]').forEach(a => wire(a, a.dataset.social));
+
+  /* Mobile menu */
+  const mb = $('#menuBtn'), mm = $('#mobileMenu');
+  const closeMenu = () => { mm.classList.add('hidden'); mm.classList.remove('flex'); mb.setAttribute('aria-expanded', 'false'); mb.firstElementChild.className = 'fa-solid fa-bars'; };
+  mb.addEventListener('click', () => {
+    const open = mm.classList.toggle('hidden') === false;
+    mm.classList.toggle('flex', open); mb.setAttribute('aria-expanded', open);
+    mb.firstElementChild.className = open ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
+  });
+  $$('#mobileMenu a').forEach(a => a.addEventListener('click', closeMenu));
+  addEventListener('keydown', e => e.key === 'Escape' && closeMenu());
+
+  /* Scroll reveal */
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .15 });
+  $$('.reveal').forEach(el => io.observe(el));
+
+  /* Particles */
+  if (!reduce) {
+    const p = $('#particles'), n = innerWidth < 640 ? 14 : 28;
+    for (let i = 0; i < n; i++) {
+      const s = document.createElement('i'); s.className = 'particle';
+      s.style.left = Math.random() * 100 + 'vw'; s.style.top = (60 + Math.random() * 50) + 'vh';
+      s.style.animationDuration = (16 + Math.random() * 22) + 's'; s.style.animationDelay = (-Math.random() * 30) + 's';
+      s.style.transform = `scale(${.6 + Math.random()})`; p.appendChild(s);
+    }
+  }
+
+  const fine = matchMedia('(hover:hover) and (pointer:fine)').matches;
+  if (fine && !reduce) {
+    /* Cursor */
+    const c = $('#cursor'), d = $('#cursor-dot'); let x = 0, y = 0, cx = 0, cy = 0;
+    addEventListener('mousemove', e => { x = e.clientX; y = e.clientY; d.style.transform = `translate(${x}px,${y}px)`; });
+    (function loop() { cx += (x - cx) * .18; cy += (y - cy) * .18; c.style.transform = `translate(${cx}px,${cy}px)`; requestAnimationFrame(loop); })();
+    $$('a,button,.card').forEach(el => { el.addEventListener('mouseenter', () => c.classList.add('big')); el.addEventListener('mouseleave', () => c.classList.remove('big')); });
+
+    /* Magnetic buttons */
+    $$('.magnetic').forEach(b => {
+      b.addEventListener('mousemove', e => { const r = b.getBoundingClientRect(); b.style.transform = `translate(${(e.clientX - r.left - r.width / 2) * .22}px,${(e.clientY - r.top - r.height / 2) * .3}px)`; });
+      b.addEventListener('mouseleave', () => b.style.transform = '');
+    });
+
+    /* Hero parallax */
+    const hud = $('#hud'), layer = $('.mouse-layer');
+    addEventListener('mousemove', e => {
+      const dx = (e.clientX / innerWidth - .5), dy = (e.clientY / innerHeight - .5);
+      layer.style.transform = `translate(${dx * -16}px,${dy * -16}px) rotateY(${dx * 5}deg)`;
+    });
+  }
+})();
+</script>
+</body>
+</html>
